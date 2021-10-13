@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Node:
-    def __init__(self, x=0.0, y=0.0):
+    def __init__(self, x: float = 0.0, y: float = 0.0):
         self.x = x
         self.y = y
 
@@ -11,7 +11,7 @@ class Node:
 
 
 class Element:
-    def __init__(self, nodes=np.zeros(4, dtype=int)):
+    def __init__(self, nodes: np.ndarray = np.zeros(4, dtype=int)):
         self.nodes = nodes
 
     def __repr__(self):
@@ -19,7 +19,7 @@ class Element:
 
 
 class Grid:
-    def __init__(self, h=0.0, b=0.0, n_h=0, n_b=0):
+    def __init__(self, h: float = 0.0, b: float = 0.0, n_h: float = 0, n_b: float = 0):
         self.H = h
         self.B = b
         self.nH = n_h
