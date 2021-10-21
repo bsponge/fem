@@ -27,15 +27,6 @@ def func2(x, y):
     return 5*x**2*y**2 + 3*x*y + 6
 
 
-'''
-grid = fem.Grid(0.5, 0.1, 5, 4)
-print('nodes:')
-print(grid.nodes)
-print()
-print('elements:')
-print(grid.elements)
-'''
-
 table = [
         {
             -1/math.sqrt(3): 1,
@@ -54,6 +45,44 @@ table = [
         }
 ]
 
-print(gauss(func1, 0, table))
-print(gauss(func1, 1, table))
-print(gauss2d(func2, 2, table))
+
+class Elem4_2D:
+    def __init__(self, eta, ksi):
+        self.ksi = ksi
+        self.eta = eta
+
+
+elem4_2d_table = []
+
+shape_funcs = [
+    lambda x: -1/4 * (1-x),
+    lambda x: -1/4 * (1+x),
+    lambda x: 1/4 * (1+x),
+    lambda x: 1/4 * (1-x),
+]
+
+
+schema_2_pts = []
+for i in range(4):
+    elem4_2d_table.append([None] * 4)
+    keys = list(table[0].keys())
+    elem4_2d_table[i][0] = shape_funcs[i](keys[0])
+    elem4_2d_table[i][3] = shape_funcs[i](keys[0])
+
+    elem4_2d_table[i][1] = shape_funcs[i](keys[1])
+    elem4_2d_table[i][2] = shape_funcs[i](keys[1])
+
+for i in range(len(elem4_2d_table)):
+    print(elem4_2d_table[i])
+
+
+elem9_2d_table = []
+
+for i in range(4):
+    elem4_2d_table.append([None] * 4)
+    keys = list(table[0].keys())
+    elem4_2d_table[i][0] = shape_funcs[i](keys[0])
+    elem4_2d_table[i][3] = shape_funcs[i](keys[0])
+
+    elem4_2d_table[i][1] = shape_funcs[i](keys[1])
+    elem4_2d_table[i][2] = shape_funcs[i](keys[1])
