@@ -56,18 +56,6 @@ class Elem4_2D:
 elem4_2d_eta_table = []
 elem4_2d_ksi_table = []
 
-class elem4_2d:
-    def __init__(self, ksi=0, eta=0):
-        self.ksi = ksi
-        self.eta = eta
-
-    def __repr__(self):
-        return f'[{self.ksi}, {self.eta}]'
-
-    def __str__(self):
-        return f'[{self.ksi}, {self.eta}]'
-
-
 eta_shape_funcs = [
     lambda x: -1/4 * (1-x),
     lambda x: -1/4 * (1+x),
@@ -88,7 +76,9 @@ schema_2_pts = []
 for i in range(4):
     elem4_2d_eta_table.append([None] * 4)
     elem4_2d_ksi_table.append([None] * 4)
-    elems.append([Elem4_2D()] * 4)
+    elems.append([])
+    for j in range(4):
+        elems[i].append(Elem4_2D())
 
     keys = list(table[0].keys())
     elem4_2d_eta_table[i][0] = eta_shape_funcs[i](keys[0])
@@ -123,10 +113,18 @@ print(elem4_2d_ksi_table)
 print(elem4_2d_eta_table)
 
 
+"""
 for e in elems:
     for r in e:
         print(r.eta, end=" ")
     print()
+    """
+elems = np.transpose(np.array(elems))
+for row in elems:
+    print('[', end="")
+    for el in row:
+        print(el.ksi, end=" ")
+    print(']')
 
 result_x = 0
 result_y = 0
@@ -141,27 +139,25 @@ print("det", np.linalg.det(j))
 print("1/det", 1/np.linalg.det(j))
 print(np.linalg.inv(j))
 
-print(grid.elements)
 
-print(grid.nodes)
-
-for i in range(grid.nE):
-    j = 0
-    for j in range(grid.elements[i].nodes):
-        pass
-        
+jacobians = []
 
 
-def jacobian(i, j, jacobian, jacobian_inv, elem2d_4, grid):
-    pass
+for element in grid.elements:
+    jacobians.append([])
+    for i in range(len(element)):
+        pcx = np.array([x.eta for x in elems[i]])
+        pcy = np.array([x.ksi for x in elems[i]])
+        x = grid.getXCoords(element)
+        y = grid.getYCoords(element)
+        result_x = np.sum(pcx*x)
+        result_y = np.sum(pcy*y)
+        jacobian = np.array([[result_x, 0], [0, result_y]])
+        jacobians[-1].append(jacobian)
 
 
-
-
-
-
-
-
+jacobians = np.array(jacobians)
+print(jacobians)
 
 
 

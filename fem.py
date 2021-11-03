@@ -17,6 +17,9 @@ class Element:
     def __repr__(self):
         return self.nodes.__repr__()
 
+    def __getitem__(self, index):
+        return self.nodes[index]
+
 
 class Grid:
     def __init__(self, h: float = 0.0, b: float = 0.0, n_h: float = 0, n_b: float = 0):
@@ -26,25 +29,40 @@ class Grid:
         self.nB = n_b
         self.nN = self.nH * self.nB
         self.nE = (self.nH - 1) * (self.nB - 1)
-        self.elements = np.empty(shape=(self.nH, self.nB), dtype=object)
+        self.elements = np.zeros((self.nH-1)*(self.nB-1), dtype=object)
         self.nodes = np.zeros(self.nN, dtype=object)
-        for x in range(self.nH):
-            for y in range(self.nB):
-                element = Element()
-                self.elements[x][y] = element
         dx = self.H / (self.nH - 1)
         dy = self.B / (self.nB - 1)
         for x in range(self.nH):
             for y in range(self.nB):
                 node = Node(float(x * dx), float(y * dy))
                 self.nodes[x * self.nB + y] = node
+                '''
         for x in range(self.elements.shape[0]):
             for y in range(self.elements.shape[1]):
                 self.elements[x][y].nodes = np.array([y + x * self.nH,
                                                       y + self.nH + x * self.nH,
                                                       y + self.nH + x * self.nH + 1,
                                                       y + x * self.nH + 1])
+                                                      '''
+        for i in range(self.nB-1):
+            for j in range(self.nH-1):
+                self.elements[i*self.nB+j] = np.array([i*self.nH+j, i*self.nH+j+self.nH, i*self.nH+j+self.nH+1, i*self.nH+j+1])
+
         self.elements = self.elements.flatten()
+
+
+    def getXCoords(self, element):
+        coords = np.zeros(4)
+        for i in range(len(element)):
+            coords[i] = self.nodes[element[i]].x
+        return coords
+
+    def getYCoords(self, element):
+        coords = np.zeros(4)
+        for i in range(len(element)):
+            coords[i] = self.nodes[element[i]].y
+        return coords
 
 
 
