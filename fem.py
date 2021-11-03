@@ -44,6 +44,7 @@ class Grid:
                                                       y + self.nH + x * self.nH,
                                                       y + self.nH + x * self.nH + 1,
                                                       y + x * self.nH + 1])
+        self.elements = self.elements.flatten()
 
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import fem
 import numpy as np
@@ -56,6 +56,18 @@ class Elem4_2D:
 elem4_2d_eta_table = []
 elem4_2d_ksi_table = []
 
+class elem4_2d:
+    def __init__(self, ksi=0, eta=0):
+        self.ksi = ksi
+        self.eta = eta
+
+    def __repr__(self):
+        return f'[{self.ksi}, {self.eta}]'
+
+    def __str__(self):
+        return f'[{self.ksi}, {self.eta}]'
+
+
 eta_shape_funcs = [
     lambda x: -1/4 * (1-x),
     lambda x: -1/4 * (1+x),
@@ -70,35 +82,137 @@ ksi_shape_funcs = [
     lambda x: -1/4 * (1+x)
 ]
 
+elems = []
 
 schema_2_pts = []
 for i in range(4):
     elem4_2d_eta_table.append([None] * 4)
     elem4_2d_ksi_table.append([None] * 4)
+    elems.append([Elem4_2D()] * 4)
 
     keys = list(table[0].keys())
     elem4_2d_eta_table[i][0] = eta_shape_funcs[i](keys[0])
     elem4_2d_eta_table[i][3] = eta_shape_funcs[i](keys[0])
+    elems[i][0].eta = eta_shape_funcs[i](keys[0])
+    elems[i][3].eta = eta_shape_funcs[i](keys[0])
 
     elem4_2d_ksi_table[i][0] = ksi_shape_funcs[i](keys[0])
     elem4_2d_ksi_table[i][3] = ksi_shape_funcs[i](keys[0])
+    elems[i][0].ksi = ksi_shape_funcs[i](keys[0])
+    elems[i][3].ksi = ksi_shape_funcs[i](keys[0])
 
     elem4_2d_eta_table[i][1] = eta_shape_funcs[i](keys[1])
     elem4_2d_eta_table[i][2] = eta_shape_funcs[i](keys[1])
+    elems[i][1].eta = eta_shape_funcs[i](keys[1])
+    elems[i][2].eta = eta_shape_funcs[i](keys[1])
 
     elem4_2d_ksi_table[i][1] = ksi_shape_funcs[i](keys[1])
     elem4_2d_ksi_table[i][2] = ksi_shape_funcs[i](keys[1])
+    elems[i][1].ksi = ksi_shape_funcs[i](keys[1])
+    elems[i][2].ksi = ksi_shape_funcs[i](keys[1])
 
-print("eta 4 elem")
-for i in range(len(elem4_2d_eta_table)):
-    print(elem4_2d_eta_table[i])
 
-print()
-print("ksi 4 elem")
+grid = fem.Grid(0.2, 0.1, 5, 4)
 
-for i in range(len(elem4_2d_eta_table)):
-    print(elem4_2d_ksi_table[i])
+nodes = [(0.0,0.0), (0.025, 0.0), (0.025, 0.025), (0.0, 0.025)]
+jacobian = []
 
+elem4_2d_ksi_table = np.transpose(np.array(elem4_2d_ksi_table))
+elem4_2d_eta_table = np.transpose(np.array(elem4_2d_eta_table))
+print(elem4_2d_ksi_table)
+print(elem4_2d_eta_table)
+
+
+for e in elems:
+    for r in e:
+        print(r.eta, end=" ")
+    print()
+
+result_x = 0
+result_y = 0
+for i in range(4):
+    result_x += elem4_2d_ksi_table[0][i] * nodes[i][0]
+    result_y += elem4_2d_eta_table[0][i] * nodes[i][1]
+
+
+j = np.array([[result_x, 0], [0, result_y]])
+print(j)
+print("det", np.linalg.det(j))
+print("1/det", 1/np.linalg.det(j))
+print(np.linalg.inv(j))
+
+print(grid.elements)
+
+print(grid.nodes)
+
+for i in range(grid.nE):
+    j = 0
+    for j in range(grid.elements[i].nodes):
+        pass
+        
+
+
+def jacobian(i, j, jacobian, jacobian_inv, elem2d_4, grid):
+    pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 elem9_2d_eta_table = []
 
 for i in range(4):
@@ -123,4 +237,4 @@ for i in range(len(elem9_2d_eta_table)):
 
 print()
 print("ksi 9 elem")
-
+"""
