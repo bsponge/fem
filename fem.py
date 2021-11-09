@@ -13,12 +13,18 @@ class Node:
 class Element:
     def __init__(self, nodes: np.ndarray = np.zeros(4, dtype=int)):
         self.nodes = nodes
+        self.x_derivatives = np.zeros((4,4))
+        self.y_derivatives = np.zeros((4,4))
+        self.H = np.zeros((4,4,4))
 
     def __repr__(self):
         return self.nodes.__repr__()
 
     def __getitem__(self, index):
         return self.nodes[index]
+
+    def __len__(self):
+        return len(self.nodes)
 
 
 class Grid:
@@ -47,7 +53,7 @@ class Grid:
                                                       '''
         for i in range(self.nB-1):
             for j in range(self.nH-1):
-                self.elements[i*self.nB+j] = np.array([i*self.nH+j, i*self.nH+j+self.nH, i*self.nH+j+self.nH+1, i*self.nH+j+1])
+                self.elements[i*self.nB+j] = Element(np.array([i*self.nH+j, i*self.nH+j+self.nH, i*self.nH+j+self.nH+1, i*self.nH+j+1]))
 
         self.elements = self.elements.flatten()
 

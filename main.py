@@ -109,23 +109,9 @@ jacobian = []
 
 elem4_2d_ksi_table = np.transpose(np.array(elem4_2d_ksi_table))
 elem4_2d_eta_table = np.transpose(np.array(elem4_2d_eta_table))
-print(elem4_2d_ksi_table)
-print(elem4_2d_eta_table)
 
 
-"""
-for e in elems:
-    for r in e:
-        print(r.eta, end=" ")
-    print()
-    """
 elems = np.transpose(np.array(elems))
-for row in elems:
-    print('[', end="")
-    for el in row:
-        print(el.ksi, end=" ")
-    print(']')
-
 result_x = 0
 result_y = 0
 for i in range(4):
@@ -134,10 +120,6 @@ for i in range(4):
 
 
 j = np.array([[result_x, 0], [0, result_y]])
-print(j)
-print("det", np.linalg.det(j))
-print("1/det", 1/np.linalg.det(j))
-print(np.linalg.inv(j))
 
 
 jacobians = []
@@ -152,85 +134,28 @@ for element in grid.elements:
         y = grid.getYCoords(element)
         result_x = np.sum(pcx*x)
         result_y = np.sum(pcy*y)
-        jacobian = np.array([[result_x, 0], [0, result_y]])
+        result_xx = np.sum(pcy*x)
+        result_yy = np.sum(pcx*y)
+        jacobian = np.array([[result_x, result_yy], [result_xx, result_y]])
         jacobians[-1].append(jacobian)
 
-
 jacobians = np.array(jacobians)
-print(jacobians)
 
 
 
+for i in range(len(jacobians)):
+    for j in range(len(jacobians[i])):
+        e = elems[j]
+        for k in range(len(e)):
+            t = np.transpose(np.matrix([e[k].ksi, e[k].eta]))
+            inv = np.linalg.inv(jacobians[i][j])
+            result = np.dot(inv, t)
+            grid.elements[i].x_derivatives[j][k] = result[0][0]
+            grid.elements[i].y_derivatives[j][k] = result[1][0]
 
 
+for i in range(len(grid.elements)):
+    for jacobian in jacobians[i]:
+        grid.elements[i].H[0] = grid.elements[i].x_derivatives * 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""
-elem9_2d_eta_table = []
-
-for i in range(4):
-    elem9_2d_eta_table.append([None] * 9)
-    keys = list(table[1].keys())
-    elem9_2d_eta_table[i][0] = eta_shape_funcs[i](keys[0])
-    elem9_2d_eta_table[i][3] = eta_shape_funcs[i](keys[0])
-    elem9_2d_eta_table[i][6] = eta_shape_funcs[i](keys[0])
-
-    elem9_2d_eta_table[i][1] = eta_shape_funcs[i](keys[1])
-    elem9_2d_eta_table[i][4] = eta_shape_funcs[i](keys[1])
-    elem9_2d_eta_table[i][7] = eta_shape_funcs[i](keys[1])
-
-    elem9_2d_eta_table[i][2] = eta_shape_funcs[i](keys[2])
-    elem9_2d_eta_table[i][5] = eta_shape_funcs[i](keys[2])
-    elem9_2d_eta_table[i][8] = eta_shape_funcs[i](keys[2])
-
-print()
-print("eta 9 elem")
-for i in range(len(elem9_2d_eta_table)):
-    print(elem9_2d_eta_table[i])
-
-print()
-print("ksi 9 elem")
-"""
