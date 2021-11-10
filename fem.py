@@ -16,6 +16,7 @@ class Element:
         self.x_derivatives = np.zeros((4,4))
         self.y_derivatives = np.zeros((4,4))
         self.H = np.zeros((4,4,4))
+        self.H_sum = np.zeros((4,4))
 
     def __repr__(self):
         return self.nodes.__repr__()
@@ -25,6 +26,10 @@ class Element:
 
     def __len__(self):
         return len(self.nodes)
+
+    def sum_H(self):
+        for H in self.H:
+            self.H_sum += H
 
 
 class Grid:
@@ -36,14 +41,15 @@ class Grid:
         self.nN = self.nH * self.nB
         self.nE = (self.nH - 1) * (self.nB - 1)
         self.elements = np.zeros((self.nH-1)*(self.nB-1), dtype=object)
-        self.nodes = np.zeros(self.nN, dtype=object)
-        dx = self.H / (self.nH - 1)
-        dy = self.B / (self.nB - 1)
-        for x in range(self.nH):
-            for y in range(self.nB):
+        self.nodes = []#np.zeros(self.nN, dtype=object)
+        dx = self.B / (self.nB - 1)
+        dy = self.H / (self.nH - 1)
+        for x in range(self.nB):
+            for y in range(self.nH):
                 node = Node(float(x * dx), float(y * dy))
-                self.nodes[x * self.nB + y] = node
-                '''
+                self.nodes.append(node)
+        self.nodes = np.array(self.nodes)
+        '''
         for x in range(self.elements.shape[0]):
             for y in range(self.elements.shape[1]):
                 self.elements[x][y].nodes = np.array([y + x * self.nH,

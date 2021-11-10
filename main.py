@@ -101,6 +101,10 @@ for i in range(4):
     elems[i][1].ksi = ksi_shape_funcs[i](keys[1])
     elems[i][2].ksi = ksi_shape_funcs[i](keys[1])
 
+elems = np.transpose(np.array(elems))
+for i in range(len(elems[2])):
+    elems[2][i].ksi, elems[3][i].ksi = elems[3][i].ksi, elems[2][i].ksi
+    elems[1][i].eta, elems[3][i].eta = elems[3][i].eta, elems[1][i].eta
 
 grid = fem.Grid(0.2, 0.1, 5, 4)
 
@@ -111,7 +115,7 @@ elem4_2d_ksi_table = np.transpose(np.array(elem4_2d_ksi_table))
 elem4_2d_eta_table = np.transpose(np.array(elem4_2d_eta_table))
 
 
-elems = np.transpose(np.array(elems))
+
 result_x = 0
 result_y = 0
 for i in range(4):
@@ -124,23 +128,32 @@ j = np.array([[result_x, 0], [0, result_y]])
 
 jacobians = []
 
-
+counter = 0
 for element in grid.elements:
     jacobians.append([])
     for i in range(len(element)):
         pcx = np.array([x.eta for x in elems[i]])
         pcy = np.array([x.ksi for x in elems[i]])
         x = grid.getXCoords(element)
+        '''
+        print('element', counter)
+        print('x')
+        print(x)
+        '''
         y = grid.getYCoords(element)
+        '''
+        print('y')
+        print(y)
+        '''
         result_x = np.sum(pcx*x)
         result_y = np.sum(pcy*y)
         result_xx = np.sum(pcy*x)
         result_yy = np.sum(pcx*y)
         jacobian = np.array([[result_x, result_yy], [result_xx, result_y]])
         jacobians[-1].append(jacobian)
+    counter += 1
 
 jacobians = np.array(jacobians)
-
 
 
 for i in range(len(jacobians)):
@@ -154,8 +167,21 @@ for i in range(len(jacobians)):
             grid.elements[i].y_derivatives[j][k] = result[1][0]
 
 
-for i in range(len(grid.elements)):
-    for jacobian in jacobians[i]:
-        grid.elements[i].H[0] = grid.elements[i].x_derivatives * 
 
+for i in range(len(grid.elements)):
+    for j in range(len(jacobians[i])):
+        Nx = np.dot(grid.elements[i].x_derivatives[j,:].reshape(4,1), grid.elements[i].x_derivatives[j,:].reshape(1, -1))
+        Ny = np.dot(grid.elements[i].y_derivatives[j,:].reshape(4,1), grid.elements[i].y_derivatives[j,:].reshape(1, -1))
+        '''
+        print('Nx')
+        print(Nx)
+        print('Ny')
+        print(Ny)
+        '''
+        H = 30 * (Nx + Ny) * np.linalg.det(jacobians[i][j])
+        grid.elements[i].H[j] = H
+
+for elem in grid.elements:
+    elem.sum_H()
+    print(elem.H_sum)
 
