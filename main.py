@@ -56,6 +56,13 @@ class Elem4_2D:
 elem4_2d_eta_table = []
 elem4_2d_ksi_table = []
 
+shape_funcs = [
+        lambda ksi, eta: 0.25*(1-ksi)*(1-eta),
+        lambda ksi, eta: 0.25*(1+ksi)*(1-eta),
+        lambda ksi, eta: 0.25*(1+ksi)*(1+eta),
+        lambda ksi, eta: 0.25*(1-ksi)*(1+eta)
+]
+
 eta_shape_funcs = [
     lambda x: -1/4 * (1-x),
     lambda x: -1/4 * (1+x),
@@ -135,16 +142,7 @@ for element in grid.elements:
         pcx = np.array([x.eta for x in elems[i]])
         pcy = np.array([x.ksi for x in elems[i]])
         x = grid.getXCoords(element)
-        '''
-        print('element', counter)
-        print('x')
-        print(x)
-        '''
         y = grid.getYCoords(element)
-        '''
-        print('y')
-        print(y)
-        '''
         result_x = np.sum(pcx*x)
         result_y = np.sum(pcy*y)
         result_xx = np.sum(pcy*x)
@@ -172,16 +170,13 @@ for i in range(len(grid.elements)):
     for j in range(len(jacobians[i])):
         Nx = np.dot(grid.elements[i].x_derivatives[j,:].reshape(4,1), grid.elements[i].x_derivatives[j,:].reshape(1, -1))
         Ny = np.dot(grid.elements[i].y_derivatives[j,:].reshape(4,1), grid.elements[i].y_derivatives[j,:].reshape(1, -1))
-        '''
-        print('Nx')
-        print(Nx)
-        print('Ny')
-        print(Ny)
-        '''
         H = 30 * (Nx + Ny) * np.linalg.det(jacobians[i][j])
         grid.elements[i].H[j] = H
 
-for elem in grid.elements:
-    elem.sum_H()
-    print(elem.H_sum)
+
+
+
+def calculate_H_BC(first_node, second_node, grid):
+    node_a = grid.nodes[first_node]
+    node_b = grid.nodes[second_node]
 
