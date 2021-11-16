@@ -20,6 +20,7 @@ class Element:
         self.H_sum = np.zeros((4,4))
         self.sides = np.zeros((4,2))
         self.integration_points = np.zeros((4,2,2))
+        self.H_BC = np.zeros((4,4,4))
 
 
     def __repr__(self):

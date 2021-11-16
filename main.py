@@ -175,8 +175,35 @@ for i in range(len(grid.elements)):
 
 
 
+sides_coords = np.array([
+    [[-1/math.sqrt(3), -1], [1/math.sqrt(3), -1]],
+    [[1, -1/math.sqrt(3)], [1, 1/math.sqrt(3)]],
+    [[1/math.sqrt(3), 1], [-1/math.sqrt(3), 1]],
+    [[-1, 1/math.sqrt(3)], [-1, -1/math.sqrt(3)]]
+    ])
 
-def calculate_H_BC(first_node, second_node, grid):
-    node_a = grid.nodes[first_node]
-    node_b = grid.nodes[second_node]
+
+for element in grid.elements:
+    H = np.zeros((4,4))
+    for i in range(len(element.sides)):
+        if not np.array_equal(element.sides[i], np.array([0,0])):
+            values_1 = np.zeros((4))
+            values_2 = np.zeros((4))
+            values_1[i%4] = shape_funcs[i%4](*sides_coords[i%4][0])
+            values_2[i%4] = shape_funcs[i%4](*sides_coords[i%4][1])
+
+            values_1[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][0])
+            values_2[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][1])
+
+            point_1 = np.dot(values_1.reshape(4,1), values_1.reshape(1,-1))
+            point_2 = np.dot(values_2.reshape(4,1), values_2.reshape(1,-1))
+            H = 25 * (point_1 + point_2) * 0.0125 
+            element.H_BC[i] = H
+
+print(grid.elements[0].H_BC)
+print('==========')
+print(grid.elements[0].H)
+print('==========')
+grid.elements[0].sum_H()
+print(grid.elements[0].H_sum)
 
