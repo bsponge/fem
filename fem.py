@@ -63,6 +63,7 @@ class Grid:
                 ]))
         self.elements = self.elements.flatten()
         self.load_sides()
+        self.H_aggregated = np.zeros((len(self.nodes), len(self.nodes)))
 
 
     def getXCoords(self, element):

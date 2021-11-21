@@ -200,10 +200,19 @@ for element in grid.elements:
             H = 25 * (point_1 + point_2) * 0.0125 
             element.H_BC[i] = H
 
-print(grid.elements[0].H_BC)
-print('==========')
-print(grid.elements[0].H)
-print('==========')
-grid.elements[0].sum_H()
-print(grid.elements[0].H_sum)
 
+
+for element in grid.elements:
+    element.sum_H()
+    H = element.H_sum
+    ids_matrix = np.zeros((4,4,2))
+    for i in range(len(element.nodes)):
+        for j in range(len(element.nodes)):
+            ids_matrix[i][j][0] = element.nodes[i]
+            ids_matrix[j][i][1] = element.nodes[i]
+    for i in range(len(ids_matrix)):
+        for j in range(len(ids_matrix[i])):
+            grid.H_aggregated[int(ids_matrix[i][j][0])][int(ids_matrix[i][j][1])] += element.H_sum[i][j]
+
+
+print(grid.H_aggregated)
