@@ -21,6 +21,7 @@ class Element:
         self.sides = np.zeros((4,2))
         self.integration_points = np.zeros((4,2,2))
         self.H_BC = np.zeros((4,4,4))
+        self.P = np.zeros((4))
 
 
     def __repr__(self):
@@ -47,6 +48,7 @@ class Grid:
         self.nE = (self.nH - 1) * (self.nB - 1)
         self.elements = np.zeros((self.nH-1)*(self.nB-1), dtype=object)
         self.nodes = []
+
         dx = self.B / (self.nB - 1)
         dy = self.H / (self.nH - 1)
         for x in range(self.nB):
@@ -56,14 +58,22 @@ class Grid:
                     node.BC = True
                 self.nodes.append(node)
         self.nodes = np.array(self.nodes)
+        '''
+        for i in range(self.nH-1):
+            for j in range(self.nB-1):
+                self.elements[i*(self.nB-1)+j] = Element(np.array([
+                    i*self.nH+i, i*self.nH+j+self.nH, i*self.nH+j+self.nH+1, i*self.nH+j+1
+                ]))
+        '''
         for i in range(self.nB-1):
             for j in range(self.nH-1):
-                self.elements[i*self.nB+j] = Element(np.array([
-                    i*self.nH+j, i*self.nH+j+self.nH, i*self.nH+j+self.nH+1, i*self.nH+j+1
+                self.elements[i*(self.nH-1)+j] = Element(np.array([
+                    i*(self.nH)+j, (i+1)*(self.nH)+j, (i+1)*(self.nH)+j+1, i*(self.nH)+j+1
                 ]))
         self.elements = self.elements.flatten()
         self.load_sides()
         self.H_aggregated = np.zeros((len(self.nodes), len(self.nodes)))
+        self.P_aggregated = np.zeros((len(self.nodes)))
 
 
     def getXCoords(self, element):

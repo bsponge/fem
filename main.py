@@ -3,6 +3,8 @@
 import fem
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+import matplotlib
 
 def gauss(func, points, table):
     result = 0.0
@@ -113,7 +115,7 @@ for i in range(len(elems[2])):
     elems[2][i].ksi, elems[3][i].ksi = elems[3][i].ksi, elems[2][i].ksi
     elems[1][i].eta, elems[3][i].eta = elems[3][i].eta, elems[1][i].eta
 
-grid = fem.Grid(0.2, 0.1, 5, 4)
+grid = fem.Grid(0.2, 0.1, 5, 5)
 
 nodes = [(0.0,0.0), (0.025, 0.0), (0.025, 0.025), (0.0, 0.025)]
 jacobian = []
@@ -182,6 +184,10 @@ sides_coords = np.array([
     [[-1, 1/math.sqrt(3)], [-1, -1/math.sqrt(3)]]
     ])
 
+detJ = np.array([
+    (grid.B/grid.nB)/2,
+    (grid.H/grid.nH)/2
+    ])
 
 for element in grid.elements:
     H = np.zeros((4,4))
@@ -197,7 +203,7 @@ for element in grid.elements:
 
             point_1 = np.dot(values_1.reshape(4,1), values_1.reshape(1,-1))
             point_2 = np.dot(values_2.reshape(4,1), values_2.reshape(1,-1))
-            H = 25 * (point_1 + point_2) * 0.0125 
+            H = 25 * (point_1 + point_2) * detJ[i%2]
             element.H_BC[i] = H
 
 
@@ -215,4 +221,34 @@ for element in grid.elements:
             grid.H_aggregated[int(ids_matrix[i][j][0])][int(ids_matrix[i][j][1])] += element.H_sum[i][j]
 
 
-print(grid.H_aggregated)
+#print(grid.H_aggregated)
+
+
+# calculate P vector v2
+
+ambient_temperature = 1200
+
+for element in grid.elements:
+    for i in range(len(element.sides)):
+        if not np.array_equal(element.sides[i], np.array([0,0])):
+            values_1 = np.zeros((4))
+            values_2 = np.zeros((4))
+            values_1[i%4] = shape_funcs[i%4](*sides_coords[i%4][0])
+            values_2[i%4] = shape_funcs[i%4](*sides_coords[i%4][1])
+
+            values_1[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][0])
+            values_2[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][1])
+
+            element.P += (25 * (values_1.reshape(4,1)*ambient_temperature + (values_2.reshape(4,1)*ambient_temperature)) * detJ[i%2]).reshape(4)
+
+
+for element in grid.elements:
+    P_local = element.P
+    for i in range(len(element.nodes)):
+        grid.P_aggregated[element.nodes[i]] += element.P[i]
+
+
+
+caxes = plt.matshow(grid.P_aggregated.reshape(grid.nB,grid.nH), cmap='RdYlBu_r')
+plt.show()
+
