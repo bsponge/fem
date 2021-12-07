@@ -6,6 +6,7 @@ class Node:
         self.x = x
         self.y = y
         self.BC = False
+        self.t = 100.0
 
     def __repr__(self):
         return f'[{self.x:.3f}, {self.y:.3f}]'
@@ -22,6 +23,8 @@ class Element:
         self.integration_points = np.zeros((4,2,2))
         self.H_BC = np.zeros((4,4,4))
         self.P = np.zeros((4))
+        self.C = np.zeros((4,4,4))
+        self.C_sum = np.zeros((4,4))
 
 
     def __repr__(self):
@@ -40,6 +43,8 @@ class Element:
 
 class Grid:
     def __init__(self, h: float = 0.0, b: float = 0.0, n_h: float = 0, n_b: float = 0):
+        self.c = 700
+        self.ro = 7800
         self.H = h
         self.B = b
         self.nH = n_h
@@ -54,6 +59,10 @@ class Grid:
         for x in range(self.nB):
             for y in range(self.nH):
                 node = Node(float(x * dx), float(y * dy))
+                if x == self.nB-1:
+                    node.x = self.B
+                if y == self.nH-1:
+                    node.y = self.H
                 if node.x == 0.0 or node.y == 0.0 or node.x == self.B or node.y == self.H:
                     node.BC = True
                 self.nodes.append(node)

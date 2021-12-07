@@ -5,6 +5,10 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import matplotlib
+import os
+import imageio
+import seaborn as sns
+from matplotlib import animation
 
 def gauss(func, points, table):
     result = 0.0
@@ -79,6 +83,13 @@ ksi_shape_funcs = [
     lambda x: -1/4 * (1+x)
 ]
 
+points = [
+        [-1/math.sqrt(3), -1/math.sqrt(3)],
+        [1/math.sqrt(3), -1/math.sqrt(3)],
+        [1/math.sqrt(3), 1/math.sqrt(3)],
+        [-1/math.sqrt(3), 1/math.sqrt(3)],
+        ]
+
 elems = []
 
 schema_2_pts = []
@@ -115,7 +126,7 @@ for i in range(len(elems[2])):
     elems[2][i].ksi, elems[3][i].ksi = elems[3][i].ksi, elems[2][i].ksi
     elems[1][i].eta, elems[3][i].eta = elems[3][i].eta, elems[1][i].eta
 
-grid = fem.Grid(0.2, 0.1, 5, 5)
+grid = fem.Grid(0.2, 0.1, 5, 4)
 
 nodes = [(0.0,0.0), (0.025, 0.0), (0.025, 0.025), (0.0, 0.025)]
 jacobian = []
@@ -189,6 +200,7 @@ detJ = np.array([
     (grid.H/grid.nH)/2
     ])
 
+
 for element in grid.elements:
     H = np.zeros((4,4))
     for i in range(len(element.sides)):
@@ -207,6 +219,7 @@ for element in grid.elements:
             element.H_BC[i] = H
 
 
+# calculate H aggregated
 
 for element in grid.elements:
     element.sum_H()
@@ -239,7 +252,8 @@ for element in grid.elements:
             values_1[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][0])
             values_2[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][1])
 
-            element.P += (25 * (values_1.reshape(4,1)*ambient_temperature + (values_2.reshape(4,1)*ambient_temperature)) * detJ[i%2]).reshape(4)
+            element.P += (25 * 
+                    (values_1.reshape(4,1)*ambient_temperature + (values_2.reshape(4,1)*ambient_temperature)) * detJ[i%2]).reshape(4)
 
 
 for element in grid.elements:
@@ -248,7 +262,63 @@ for element in grid.elements:
         grid.P_aggregated[element.nodes[i]] += element.P[i]
 
 
+# calculate C
 
-caxes = plt.matshow(grid.P_aggregated.reshape(grid.nB,grid.nH), cmap='RdYlBu_r')
+arr = np.zeros((4,4))
+for i in range(4):
+    arr[i] = shape_values = np.array([
+            shape_funcs[0](*points[i]),
+            shape_funcs[1](*points[i]),
+            shape_funcs[2](*points[i]),
+            shape_funcs[3](*points[i])
+            ])
+
+for element in grid.elements:
+    C = np.zeros((4,4))
+    for i in range(len(points)):
+        element.C[i] = grid.c * grid.ro * np.dot(arr[i], arr[i].reshape(4,1)) * 0.000156
+        C += element.C[i]
+    element.C_sum = C
+
+
+d_tau = 3.0
+tau = 0.0
+tau_end = 1000.0
+
+cnt = 0
+
+#fig, ax = plt.subplots()
+temps = np.array([node.t for node in grid.nodes]).reshape(grid.nB, grid.nH)
+
+for i in np.arange(0.0, tau_end, d_tau):
+    for element in grid.elements:
+        P = np.zeros((4))
+        for idx in range(len(element.nodes)):
+            P[idx] = element.nodes[idx]
+        P = P.reshape(4, 1)
+        a = element.H_sum + element.C_sum/d_tau
+        b = np.dot(element.C_sum/d_tau, np.array([[grid.nodes[element.nodes[0]].t],
+                                            [grid.nodes[element.nodes[1]].t],
+                                            [grid.nodes[element.nodes[2]].t],
+                                            [grid.nodes[element.nodes[3]].t]])) - P
+        
+        t1 = np.linalg.solve(a,b).reshape(4)
+        #print(t1)
+
+        for idx in range(len(t1)):
+            grid.nodes[element.nodes[idx]].t = t1[idx]
+
+temperatures = np.zeros(grid.nodes.shape)
+for idx in range(len(grid.nodes)):
+    temperatures[idx] = grid.nodes[idx].t
+
+plot = plt.matshow(temperatures.reshape(grid.nB, grid.nH), cmap='OrRd')
 plt.show()
 
+print(grid.elements[6].C)
+
+
+
+#print(caxes)
+#plt.savefig('1.png')
+#plt.show()
