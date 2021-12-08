@@ -7,8 +7,16 @@ import matplotlib.pyplot as plt
 import matplotlib
 import os
 import imageio
-import seaborn as sns
 from matplotlib import animation
+import sys
+
+np.set_printoptions(suppress=True)
+np.set_printoptions(threshold=sys.maxsize)
+np.set_printoptions(linewidth=400)
+np.set_printoptions(precision=3)
+
+
+
 
 def gauss(func, points, table):
     result = 0.0
@@ -126,7 +134,7 @@ for i in range(len(elems[2])):
     elems[2][i].ksi, elems[3][i].ksi = elems[3][i].ksi, elems[2][i].ksi
     elems[1][i].eta, elems[3][i].eta = elems[3][i].eta, elems[1][i].eta
 
-grid = fem.Grid(0.2, 0.1, 5, 4)
+grid = fem.Grid(0.2, 0.1, 20, 30)
 
 nodes = [(0.0,0.0), (0.025, 0.0), (0.025, 0.025), (0.0, 0.025)]
 jacobian = []
@@ -148,7 +156,7 @@ j = np.array([[result_x, 0], [0, result_y]])
 
 jacobians = []
 
-counter = 0
+
 for element in grid.elements:
     jacobians.append([])
     for i in range(len(element)):
@@ -160,9 +168,8 @@ for element in grid.elements:
         result_y = np.sum(pcy*y)
         result_xx = np.sum(pcy*x)
         result_yy = np.sum(pcx*y)
-        jacobian = np.array([[result_x, result_yy], [result_xx, result_y]])
+        jacobian = np.array([[result_xx,result_x], [result_y, result_yy]])
         jacobians[-1].append(jacobian)
-    counter += 1
 
 jacobians = np.array(jacobians)
 
@@ -177,15 +184,26 @@ for i in range(len(jacobians)):
             grid.elements[i].x_derivatives[j][k] = result[0][0]
             grid.elements[i].y_derivatives[j][k] = result[1][0]
 
+arr = np.zeros((4,4))
+for i in range(4):
+    arr[i] = shape_values = np.array([
+            shape_funcs[0](*points[i]),
+            shape_funcs[1](*points[i]),
+            shape_funcs[2](*points[i]),
+            shape_funcs[3](*points[i])
+            ])
 
 
 for i in range(len(grid.elements)):
+    C = np.zeros((4,4))
     for j in range(len(jacobians[i])):
         Nx = np.dot(grid.elements[i].x_derivatives[j,:].reshape(4,1), grid.elements[i].x_derivatives[j,:].reshape(1, -1))
         Ny = np.dot(grid.elements[i].y_derivatives[j,:].reshape(4,1), grid.elements[i].y_derivatives[j,:].reshape(1, -1))
-        H = 30 * (Nx + Ny) * np.linalg.det(jacobians[i][j])
+        H = 25 * (Nx + Ny) * np.linalg.det(jacobians[i][j])
         grid.elements[i].H[j] = H
-
+        C = np.zeros((4,4))
+        element = grid.elements[i]
+        element.C_sum += grid.c * grid.ro * np.dot(arr[j].reshape(4,1), arr[j].reshape(1, -1)) * np.linalg.det(jacobians[i][j])
 
 
 sides_coords = np.array([
@@ -196,13 +214,15 @@ sides_coords = np.array([
     ])
 
 detJ = np.array([
-    (grid.B/grid.nB)/2,
-    (grid.H/grid.nH)/2
+    (grid.B/(grid.nB-1))/2,
+    (grid.H/(grid.nH-1))/2
     ])
-
 
 for element in grid.elements:
     H = np.zeros((4,4))
+    
+
+for element in grid.elements:
     for i in range(len(element.sides)):
         if not np.array_equal(element.sides[i], np.array([0,0])):
             values_1 = np.zeros((4))
@@ -215,7 +235,7 @@ for element in grid.elements:
 
             point_1 = np.dot(values_1.reshape(4,1), values_1.reshape(1,-1))
             point_2 = np.dot(values_2.reshape(4,1), values_2.reshape(1,-1))
-            H = 25 * (point_1 + point_2) * detJ[i%2]
+            H = 300 * (point_1 + point_2) * detJ[i%2]
             element.H_BC[i] = H
 
 
@@ -231,10 +251,12 @@ for element in grid.elements:
             ids_matrix[j][i][1] = element.nodes[i]
     for i in range(len(ids_matrix)):
         for j in range(len(ids_matrix[i])):
-            grid.H_aggregated[int(ids_matrix[i][j][0])][int(ids_matrix[i][j][1])] += element.H_sum[i][j]
+            H_BC_sum = np.zeros((4,4))
+            for H_BC in element.H_BC:
+                H_BC_sum += H_BC
+            grid.H_aggregated[int(ids_matrix[i][j][0])][int(ids_matrix[i][j][1])] += element.H_sum[i][j] + H_BC_sum[i][j]
+            grid.C_aggregated[int(ids_matrix[i][j][0])][int(ids_matrix[i][j][1])] += element.C_sum[i][j]
 
-
-#print(grid.H_aggregated)
 
 
 # calculate P vector v2
@@ -252,8 +274,7 @@ for element in grid.elements:
             values_1[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][0])
             values_2[(i+1)%4] = shape_funcs[(i+1)%4](*sides_coords[i%4][1])
 
-            element.P += (25 * 
-                    (values_1.reshape(4,1)*ambient_temperature + (values_2.reshape(4,1)*ambient_temperature)) * detJ[i%2]).reshape(4)
+            element.P += (300 * (values_1.reshape(4,1)*ambient_temperature + (values_2.reshape(4,1)*ambient_temperature)) * detJ[i%2]).reshape(4)
 
 
 for element in grid.elements:
@@ -262,63 +283,28 @@ for element in grid.elements:
         grid.P_aggregated[element.nodes[i]] += element.P[i]
 
 
-# calculate C
-
-arr = np.zeros((4,4))
-for i in range(4):
-    arr[i] = shape_values = np.array([
-            shape_funcs[0](*points[i]),
-            shape_funcs[1](*points[i]),
-            shape_funcs[2](*points[i]),
-            shape_funcs[3](*points[i])
-            ])
-
-for element in grid.elements:
-    C = np.zeros((4,4))
-    for i in range(len(points)):
-        element.C[i] = grid.c * grid.ro * np.dot(arr[i], arr[i].reshape(4,1)) * 0.000156
-        C += element.C[i]
-    element.C_sum = C
-
-
 d_tau = 3.0
 tau = 0.0
-tau_end = 1000.0
+tau_end = 100.0
 
-cnt = 0
 
-#fig, ax = plt.subplots()
-temps = np.array([node.t for node in grid.nodes]).reshape(grid.nB, grid.nH)
+tmpe = []
 
 for i in np.arange(0.0, tau_end, d_tau):
-    for element in grid.elements:
-        P = np.zeros((4))
-        for idx in range(len(element.nodes)):
-            P[idx] = element.nodes[idx]
-        P = P.reshape(4, 1)
-        a = element.H_sum + element.C_sum/d_tau
-        b = np.dot(element.C_sum/d_tau, np.array([[grid.nodes[element.nodes[0]].t],
-                                            [grid.nodes[element.nodes[1]].t],
-                                            [grid.nodes[element.nodes[2]].t],
-                                            [grid.nodes[element.nodes[3]].t]])) - P
-        
-        t1 = np.linalg.solve(a,b).reshape(4)
-        #print(t1)
+    t0 = np.array([node.t for node in grid.nodes])
+    H = grid.H_aggregated + grid.C_aggregated/d_tau
+    P = grid.P_aggregated + np.dot(grid.C_aggregated/d_tau, t0)
 
-        for idx in range(len(t1)):
-            grid.nodes[element.nodes[idx]].t = t1[idx]
+    t1 = np.linalg.solve(H, P)
 
-temperatures = np.zeros(grid.nodes.shape)
-for idx in range(len(grid.nodes)):
-    temperatures[idx] = grid.nodes[idx].t
+    
+    for idx in range(len(grid.nodes)):
+        grid.nodes[idx].t = t1[idx]
 
-plot = plt.matshow(temperatures.reshape(grid.nB, grid.nH), cmap='OrRd')
+    tmpe = np.flip(t1.reshape((grid.nB, grid.nH))).T
+    
+
+
+plot = plt.matshow(tmpe, cmap='OrRd')
+
 plt.show()
-
-print(grid.elements[6].C)
-
-
-
-#print(caxes)
-#plt.savefig('1.png')
-#plt.show()

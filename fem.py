@@ -83,6 +83,7 @@ class Grid:
         self.load_sides()
         self.H_aggregated = np.zeros((len(self.nodes), len(self.nodes)))
         self.P_aggregated = np.zeros((len(self.nodes)))
+        self.C_aggregated = np.zeros((len(self.nodes), len(self.nodes)))
 
 
     def getXCoords(self, element):
@@ -110,4 +111,3 @@ class Grid:
             if self.nodes[element[-1]].BC and self.nodes[element[0]].BC:
                     element.sides[-1][0] = element[-1]
                     element.sides[-1][1] = element[0]
-
