@@ -12,7 +12,7 @@ import sys
 
 np.set_printoptions(suppress=True)
 np.set_printoptions(threshold=sys.maxsize)
-np.set_printoptions(linewidth=400)
+np.set_printoptions(linewidth=350)
 np.set_printoptions(precision=3)
 
 
@@ -134,7 +134,8 @@ for i in range(len(elems[2])):
     elems[2][i].ksi, elems[3][i].ksi = elems[3][i].ksi, elems[2][i].ksi
     elems[1][i].eta, elems[3][i].eta = elems[3][i].eta, elems[1][i].eta
 
-grid = fem.Grid(0.2, 0.1, 20, 30)
+
+grid = fem.Grid(0.2, 0.1, 30, 20, 2)
 
 nodes = [(0.0,0.0), (0.025, 0.0), (0.025, 0.025), (0.0, 0.025)]
 jacobian = []
@@ -156,7 +157,7 @@ j = np.array([[result_x, 0], [0, result_y]])
 
 jacobians = []
 
-
+"""
 for element in grid.elements:
     jacobians.append([])
     for i in range(len(element)):
@@ -172,8 +173,10 @@ for element in grid.elements:
         jacobians[-1].append(jacobian)
 
 jacobians = np.array(jacobians)
+"""
 
 
+"""
 for i in range(len(jacobians)):
     for j in range(len(jacobians[i])):
         e = elems[j]
@@ -282,10 +285,11 @@ for element in grid.elements:
     for i in range(len(element.nodes)):
         grid.P_aggregated[element.nodes[i]] += element.P[i]
 
+"""
 
-d_tau = 3.0
+d_tau = 5.0
 tau = 0.0
-tau_end = 100.0
+tau_end = 300.0
 
 
 tmpe = []
@@ -306,5 +310,6 @@ for i in np.arange(0.0, tau_end, d_tau):
 
 
 plot = plt.matshow(tmpe, cmap='OrRd')
+plt.colorbar()
 
 plt.show()
