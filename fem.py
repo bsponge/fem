@@ -7,7 +7,7 @@ class Node:
         self.x = x
         self.y = y
         self.BC = False
-        self.t = 600.0
+        self.t = 100.0
 
     def __repr__(self):
         return f'[{self.x:.3f}, {self.y:.3f}]'
@@ -67,8 +67,6 @@ class Grid:
         for gauss_pts in gauss_points:
             sides_sort(gauss_pts, Grid.gauss_values, integration_points_number-2)
 
-        if integration_points_number < 2 or (integration_points_number > 2 and (n_b % integration_points_number == 0 or n_b % integration_points_number == 0)):
-            raise Exception("Integration points must be bigger than 1")
 
 
         self.gauss_2d_points = gauss_points[integration_points_number-2]
@@ -93,9 +91,9 @@ class Grid:
 
         self.c = 700
         self.ro = 7800
-        self.alpha = 300
+        self.alpha = 300.0
         self.k = 25
-        self.ambient_temperature = 1200
+        self.ambient_temperature = 1200.0
         self.H = h
         self.B = b
         self.nH = n_h
